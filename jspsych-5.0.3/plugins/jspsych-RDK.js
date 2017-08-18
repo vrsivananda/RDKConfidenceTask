@@ -26,7 +26,7 @@
 */
 		
 		
-jsPsych.plugins["jspsych-RDK"] = (function() {
+jsPsych.plugins["RDK"] = (function() {
 
 	var plugin = {};
 

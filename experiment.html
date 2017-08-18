@@ -19,21 +19,25 @@
 		//PARAMETERS
 		var trialDuration = 200;
 		var trialsPerCondition = 50;
-		var timingPostTrial = 500;
 		var RDKType = 3;
 		var numberOfDots = 200;
 		var currentCoherence = 0.8; //Starting coherence
 		var choices = [];
 		var coherentDirection_left = 180; //Left and right corresponds to the scale on similarity which ranges from left to right (0 to 100)
 		var coherentDirection_right = 0;
-		var fakeStimuli = "<div style = 'height: 500px; width: 700px;'></div>";
+		var fakeStimuli = "<div style = 'height: 500px; width: 700px;'></div>"; //This adjusts how high the slider is on the screen. Increase the height of the fake stimuli to push the slider down. Decrease the height to move the slider up.
+		
+		//Timing parameters
+		var timingPostTrialRDK = 1000;
+		var timingPostTrialSimilarity = 1000;
+		var timingPostTrialText = 1000;
 		
 		//Variables for practice trials
 		var easyCoherence = 0.8;
 		var hardCoherence = 0.2;
 		var numberOfEasyPracticeTrials = 6; //Must be even number (pair of left/right). Odd number will be rounded down to even.
 		var numberOfHardPracticeTrials = 4; //Must be even number (pair of left/right). Odd number will be rounded down to even.
-		var easyCorrectThreshold = 6; //If they get less than this value, kick them out
+		var easyCorrectThreshold = 4; //If they get less than this value, kick them out
 		var easyCorrectCounter = 0;
 		var hardCorrectCounter = 0;
 		
@@ -61,13 +65,18 @@
 		//Prototype of a trial to be modified in the functions based on what is needed
 		//coherent direction and coherence parameters still need to be specified (will do so in the makeTwoTrialsArray function below)
 		var typicalTrial = {
-			type: "jspsych-RDK", 
-			timing_post_trial: timingPostTrial, //The Inter Trial Interval. You can either have no ITI, or change the display element to be the same color as the stimuli background to prevent flashing between trials
+			type: "RDK", 
+			timing_post_trial: timingPostTrialRDK, //The Inter Trial Interval. You can either have no ITI, or change the display element to be the same color as the stimuli background to prevent flashing between trials
 			number_of_dots: numberOfDots, //Total number of dots in the aperture
 			RDK_type: RDKType, //The type of RDK used
 			trial_duration: trialDuration //Duration of each trial in ms
 		};
 		
+		
+		//Shortcuts for text (used in the text-making functions)
+		var openText = "<h3>"
+		var closeText = "</h3>"
+		var lineSkip = "<br>";
 		
 		
 		//Change the body element to be the same color as the stimuli background
@@ -159,36 +168,47 @@
 			
 			//Shortcuts for the text
 			var header = "<h2> Instructions: </h2>";
-			var lineSkip = "<br>";
 			
 			//First page text
 			var text1 = header + 
-				lineSkip +
-				"<h3> You will be presented with a collection of moving dots in the middle of the screen. Some of them will be moving randomly and others (non-random dots) will all be moving to the left or right at the same speed. Your task is to determine in which direction the non-random dots are moving (left or right). The proportion of dots that move randomly will range from 10% of the total dots to 90% of the dots.</h3>" +
-				lineSkip +
-				"<h3> After 200ms, the dots will disappear and a slider will show up on the screen. The initial position of the slider will be in the middle. Drag the slider to the left if you think the dots moved to the left. Drag the slider to the right if you think the dots moved to the right. </h3>" +
-				lineSkip +
-				"<h3> The slider also represents your confidence in the task. Drag the slider based on how confident you are in the direction of the non-random dots. If you are 100% certain, then drag it all the way to the end. If you are 50% certain, then drag it halfway. </h3>" +
-				lineSkip +
-				"<h3>Press any key to continue.</h3>";
-			
+				lineSkip + openText +
+				"You will be presented with a collection of moving dots in the middle of the screen. Some of them will be moving randomly and others (non-random dots) will all be moving to the left or right at the same speed. Your task is to determine in which direction the non-random dots are moving (left or right)." +
+				closeText + lineSkip + openText +
+				"The proportion of dots that move randomly will range from 10% of the total dots to 90% of the dots. Thus some trials will be easy to judge, but other trials will be more difficult. Try to be as accurate as possible on all trials, even the difficult ones!" +
+				closeText + lineSkip + openText +
+				"Press any key to continue." +
+				closeText;
+				
 			//Second page text	
-			var text2 = header +
-				lineSkip +
-				"<h3> Also, please note that you will not be allowed to proceed unless you drag the slider to the left or right of the middle. If the slider is not moved, you will not be able to continue to the next trial. If you are completely unsure of which direction the non-random dots moved, just make your best guess.</h3>"	+
-				lineSkip +
-				"<h3> You will be given 10 practice trials before the start of the actual experiment. Make sure that you take the time to understand the task and are comfortable with the layout of the screen. </h3>" +
-				lineSkip +
-				"<h3> This is the end of the instructions. The practice trials will begin in the next screen. Remember to use the whole range of confidence intervals (drag the slider based on how confident you are on your decision).</h3>" +
-				lineSkip +
-				"<h3> Press any key to begin the practice trials.</h3>";
+			var text2 = header + 
+				lineSkip + openText +
+				"After 200ms, the dots will disappear and a slider will show up on the screen. The initial position of the slider will be in the middle. Drag the slider to the left if you think the dots moved to the left. Drag the slider to the right if you think the dots moved to the right." +
+				closeText + lineSkip + openText +
+				"The slider also represents your confidence in the task. Drag the slider based on how confident you are in the direction of the dots that are all moving in the same direction (non-random dots). If you are 100% certain, then drag it all the way to the end. If you are 50% certain, then drag it halfway." +
+				closeText + lineSkip + openText +
+				"Press any key to continue." +
+				closeText;
+			
+			//Third page text	
+			var text3 = header +
+				lineSkip + openText +
+				"Also, please note that you will not be allowed to proceed unless you drag the slider to the left or right of the middle. If the slider is not moved, you will not be able to continue to the next trial. If you are completely unsure of which direction the non-random dots moved, just make your best guess."	+
+				closeText + lineSkip + openText +
+				"You will be given 10 practice trials before the start of the actual experiment. Make sure that you take the time to understand the task and are comfortable with the layout of the screen." +
+				closeText + lineSkip + openText +
+				"This is the end of the instructions. The practice trials will begin in the next screen. Please use the <b><i>ENTIRE RANGE</i></b> of the confidence slider during this task, being as precise as you can in selecting not only the direction the dots are moving, but also in <i>specifying how confident you are</i>." +
+				closeText + lineSkip + openText +
+				"Press any key to begin the practice trials." +
+				closeText;
 			
 			//The block of instructions containing all the pages of text above
 			var instructions_block = {
-				type: "text",
+				type: 'text',
+				timing_post_trial: timingPostTrialText,
 				timeline: [
 					{text: text1},
-					{text: text2}
+					{text: text2},
+					{text: text3}
 				]
 			};
 			
@@ -197,21 +217,20 @@
 		
 		//Function to make the text between the easy and hard practice trials
 		function makeTextBetweenEasyAndHardPracticeTrials(){
-			
-			//Shortcut for the text
-			var lineSkip = "<br>";
-			
+						
 			//The block of text
 			var textBetweenEasyAndHardPracticeTrials = {
 				type: 'text',
-				text: lineSkip +
-					"<h3> Great work! Those were the easy practice trials. As you progress through the experiment, trials are likely to get more difficult. </h3>" +
-					lineSkip +
-					"<h3> The next four practice trials will be much harder. Try your best to determine the direction of the non-random dots.</h3>" +
-					lineSkip + 
-					"<h3> Remember to use the full range of the slider to indicate how confident you are in your decision. If you are completely unsure, just make your best guess.</h3>" +
-					lineSkip + 
-					"<h3> Press any key to continue.</h3>"
+				timing_post_trial: timingPostTrialText,
+				text: lineSkip + openText +
+					"Great work! Those were the easy practice trials. As you progress through the experiment, trials are likely to get more difficult." +
+					closeText + lineSkip + openText +
+					"The next four practice trials will be much harder. Try your best to determine the direction of the dots that are all moving in the same direction." +
+					closeText + lineSkip + openText +
+					"Remember to use the entire range of the slider to indicate how confident you are in your decision. If you are completely unsure, just make your best guess." +
+					closeText + lineSkip + openText +
+					"Press any key to continue." +
+					closeText
 			};
 			
 			return textBetweenEasyAndHardPracticeTrials;
@@ -221,19 +240,18 @@
 		//Function to make the text before actual trials
 		function makeTextBeforeActualTrials(){
 			
-			//Shortcut for the text
-			var lineSkip = "<br>";
-			
 			var textBeforeActualTrials = {
 				type: 'text',
-				text: lineSkip +
-					"<h3> Great job! You have completed all the practice trials. </h3>" +
-					lineSkip +
-					"<h3> We will now start the actual trials. This will take around x minutes to complete.</h3>" +
-					lineSkip + 
-					"<h3> Remember to use the full range of the slider to indicate how confident you are in your decision. If you are completely unsure, just make your best guess.</h3>" +
-					lineSkip + 
-					"<h3> Press any key to continue.</h3>"
+				timing_post_trial: timingPostTrialText,
+				text: lineSkip + openText +
+					"Great job! You have completed all the practice trials." +
+					closeText + lineSkip + openText +
+					"We will now start the actual trials. You will not be receiving feedback for the following trials. This will take around x minutes to complete." +
+					closeText + lineSkip + openText +
+					"Remember to use the full range of the slider to indicate how confident you are in your decision. If you are completely unsure, just make your best guess." +
+					closeText + lineSkip + openText +
+					"Press any key to continue." +
+					closeText
 			}
 			
 			return textBeforeActualTrials;
@@ -242,17 +260,16 @@
 		//Function to make the text after all trials
 		function makeTextAfterAllTrials(){
 			
-			//Shortcut for the text
-			var lineSkip = "<br>";
-			
 			var textBeforeActualTrials = {
 				type: 'text',
-				text: lineSkip +
-					"<h3> Well done! You have completed the experiment. </h3>" +
-					lineSkip +
-					"<h3> Thank you very much for your time in participating in our experiment. Your participation will contribute to greater understanding of the human visual system.</h3>" +
-					lineSkip + 
-					"<h3> Press any key to officially end the experiment.</h3>" 
+				timing_post_trial: timingPostTrialText,
+				text: lineSkip + openText +
+					"Well done! You have completed the experiment." +
+					closeText + lineSkip + openText +
+					"Thank you very much for your time in participating in our experiment. Your participation will contribute to greater understanding of the human visual system." +
+					closeText + lineSkip + openText +
+					"Press any key to officially end the experiment." +
+					closeText
 			}
 			
 			return textBeforeActualTrials;
@@ -324,10 +341,10 @@
 					type: 'similarity',
 					is_html: true,
 					stimuli: [fakeStimuli, fakeStimuli], //No stimuli for this plugin
-					labels: ["Definitely left", "Maybe left", "Maybe right","Definitely right"],
+					labels: ["Definitely left", "Maybe left", "|", "Maybe right","Definitely right"],
 					timing_first_stim: 1, //Setting all the timings to zero so that we only use the timing_post_trial to control the timings
 					timing_image_gap: 1,
-					prompt: "<h4> Slide the slider to show how confident you are in the direction of the dots.</h4>",
+					prompt: "<h4> Move the slider to show how confident you are in the direction of the dots.</h4>",
 					data: {
 						coherent_direction: currentRDKTrial.coherent_direction, //Tag the direction of the previous RDK trial onto the similarity task
 						difficulty: currentRDKTrial.difficulty, //Tag the difficulty of the previous RDK trial onto the similarity task
@@ -381,6 +398,7 @@
 					//Create the feedback trial to be pushed in
 					var feedbackTrial = {
 						type: 'text',
+						timing_post_trial: timingPostTrialText,
 						text: function(){
 							
 							//Declare the string to return
@@ -391,20 +409,18 @@
 							
 							//Get the correctness of the previous trial
 							var isCorrect = dataObject.correct;
-							
-							//Shortcut for the text
-							var lineSkip = "<br>";
-							
+														
 							//If it is correct, then display text that says that the subject did well
 							if (isCorrect){
 								
 								returnString = lineSkip +
-									lineSkip +
-									"<h3> That's correct!</h3>" +
-									lineSkip +
-									"<h3> Keep up the good work!</h3>" +
-									lineSkip +
-									"<h3> Press any key to continue. </h3>";
+									lineSkip + lineSkip + openText +
+									"That's correct!" +
+									closeText + lineSkip + openText +
+									"Keep up the good work!" +
+									closeText + lineSkip + openText +
+									"Press any key to continue." +
+									closeText;
 								
 								//If it is an easy trial, increase the easy counter
 								if (dataObject.difficulty == "easy"){
@@ -422,13 +438,15 @@
 							}
 							else{
 								returnString = lineSkip +
-								"<h3> That is incorrect. </h3>" +
-								lineSkip +
-								"<h3>Remember to try to see where the non-random dots are moving.</h3>" +
-								lineSkip +
-								"<h3>Please try again.</h3>" +
-								lineSkip +
-								"<h3>Press any key to continue. </h3>";
+								lineSkip + lineSkip + openText +
+								"That is incorrect." +
+								closeText + lineSkip + openText +
+								"Remember to try to see where the non-random dots are moving." +
+								closeText + lineSkip + openText +
+								"Please try again." +
+								closeText + lineSkip + openText +
+								"Press any key to continue." +
+								closeText;
 							}
 								
 							return returnString;
@@ -450,7 +468,13 @@
 			
 			mixedArray[mixedArray.length-1].on_finish = function(){
 				if(easyCorrectCounter < easyCorrectThreshold){
-					jsPsych.endExperiment("<br><br><br><h3>Thank you for participating in this experiment. <br><br><br> We will be compensating you $0.25 for your time. <br><br><br> You may exit the experiment.</h3>");
+					jsPsych.endExperiment(lineSkip + lineSkip + lineSkip + openText +
+						"Thank you for participating in this experiment." +
+						closeText +	lineSkip + lineSkip + lineSkip + openText +
+						"We will be compensating you $0.25 for your time." +
+						closeText + lineSkip + lineSkip + lineSkip + openText +
+						"You may exit the experiment." +
+						closeText);
 				}
 				else{
 					return false;

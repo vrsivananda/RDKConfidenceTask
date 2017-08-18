@@ -175,7 +175,7 @@ jsPsych.plugins.similarity = (function() {
         'id': 'next',
         'class': 'sim',
         'html': 'Submit Answer',
-        'style': 'text-align: center; font-size: 16px; postion: relative; height: 40px; width: '+ slider_width //[sivaHack]
+        'style': 'text-align: center; font-size: 16px; postion: relative; height: 60px; width: '+ slider_width //[sivaHack]
       }));
 
       // if prompt is set, show prompt
