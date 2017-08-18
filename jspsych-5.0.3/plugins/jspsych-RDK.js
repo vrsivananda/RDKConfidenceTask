@@ -36,7 +36,10 @@ jsPsych.plugins["jspsych-RDK"] = (function() {
 		//--------------------------------------
 		//---------SET PARAMETERS BEGIN---------
 		//--------------------------------------
-
+		
+		//If any of the parameters are functions, evaluate them now
+    	trial = jsPsych.pluginAPI.evaluateFunctionParameters(trial);
+    
 		//Note on '||' logical operator: If the first option is 'undefined', it evalutes to 'false' and the second option is returned as the assignment
 		trial.choices = trial.choices || [];
 		trial.correct_choice = trial.correct_choice; 
@@ -138,9 +141,9 @@ jsPsych.plugins["jspsych-RDK"] = (function() {
 		var canvas = document.createElement("canvas");
 		display_element.append(canvas); //'append' is the jQuery equivalent of 'appendChild' in the DOM method
 		
-		
 		//The document body IS 'display_element' (i.e. <body class="jspsych-display-element"> .... </body> )
 		var body = document.getElementsByClassName("jspsych-display-element")[0];
+		
 		//Remove the margins and paddings of the display_element
 		body.style.margin = 0;
 		body.style.padding = 0;
@@ -283,6 +286,9 @@ jsPsych.plugins["jspsych-RDK"] = (function() {
 			
 			//Remove the canvas as the child of the display_element element
 			display_element.empty();
+			
+			//Restore the margin to JsPsych defaults
+			body.style.margin = "50px auto 50px auto";
 
 			//End this trial and move on to the next trial
 			jsPsych.finishTrial(trial_data);

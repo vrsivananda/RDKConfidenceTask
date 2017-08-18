@@ -166,12 +166,16 @@ jsPsych.plugins.similarity = (function() {
           'left': (spacing_interval * index) - (item_width / 2)
         });
       });
+      
+      //[sivaHack]
+      document.getElementsByTagName('body')[0].style.textAlign = "center";
 
       //  create button
       display_element.append($('<button>', {
         'id': 'next',
         'class': 'sim',
-        'html': 'Submit Answer'
+        'html': 'Submit Answer',
+        'style': 'text-align: center; font-size: 16px; postion: relative; height: 40px; width: '+ slider_width //[sivaHack]
       }));
 
       // if prompt is set, show prompt
@@ -180,23 +184,33 @@ jsPsych.plugins.similarity = (function() {
       }
 
       $("#next").click(function() {
-        var endTime = (new Date()).getTime();
-        var response_time = endTime - startTime;
-
-        // kill any remaining setTimeout handlers
-        for (var i = 0; i < setTimeoutHandlers.length; i++) {
-          clearTimeout(setTimeoutHandlers[i]);
-        }
-
+        
+        //[sivaHack] get the score
         var score = $("#slider").slider("value");
-        var trial_data = {
-          "sim_score": score,
-          "rt": response_time,
-          "stimulus": JSON.stringify([trial.stimuli[0], trial.stimuli[1]])
-        };
-        // goto next trial in block
-        display_element.html('');
-        jsPsych.finishTrial(trial_data);
+        
+        //[sivaHack] Only do the end trial stuff if the score is not 50
+        if (score != 50){
+          
+          var endTime = (new Date()).getTime();
+          var response_time = endTime - startTime;
+
+          // kill any remaining setTimeout handlers
+          for (var i = 0; i < setTimeoutHandlers.length; i++) {
+            clearTimeout(setTimeoutHandlers[i]);
+          }
+          
+                    
+          var trial_data = {
+            "sim_score": score,
+            "rt": response_time,
+            "stimulus": JSON.stringify([trial.stimuli[0], trial.stimuli[1]])
+          };
+          // goto next trial in block
+          display_element.html('');
+          jsPsych.finishTrial(trial_data);
+            
+          } 
+        
       });
     }
   };
