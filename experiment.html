@@ -6,6 +6,7 @@
 		 <script src = "jspsych-5.0.3/jspsych.js"></script>
 		 <script src = "jspsych-5.0.3/plugins/jspsych-RDK.js"></script> <!--Include the script for the RDK plugin-->
 		 <script src = "jspsych-5.0.3/plugins/jspsych-text.js"></script>
+		 <script src = "jspsych-5.0.3/plugins/jspsych-single-stim.js"></script>
 		 <link href = "jspsych-5.0.3/css/jspsych.css" rel = "stylesheet" type = "text/css"></link>
 		 <script src = "jspsych-5.0.3/plugins/jspsych-similarity.js"></script>
 		 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script> <!--For similarity plugin-->
@@ -28,9 +29,10 @@
 		var fakeStimuli = "<div style = 'height: 500px; width: 700px;'></div>"; //This adjusts how high the slider is on the screen. Increase the height of the fake stimuli to push the slider down. Decrease the height to move the slider up.
 		
 		//Timing parameters
+		var timingPostTrialText = 1000;
 		var timingPostTrialRDK = 1000;
 		var timingPostTrialSimilarity = 1000;
-		var timingPostTrialText = 1000;
+		var fixationCrossDuration = 1000;
 		
 		//Variables for practice trials
 		var easyCoherence = 0.8;
@@ -78,6 +80,9 @@
 		var closeText = "</h3>"
 		var lineSkip = "<br>";
 		
+		//Variables for width and height of canvas
+		var windowWidth = window.innerWidth;
+		var windowHeight = window.innerHeight;
 		
 		//Change the body element to be the same color as the stimuli background
 		document.getElementsByTagName("body")[0].style.background = "gray";
@@ -142,6 +147,8 @@
 		main_timeline = main_timeline.concat(makeTextBeforeActualTrials()); //Transition to actual trials
 		main_timeline = main_timeline.concat(allActualTrials); //Actual trials
 		main_timeline = main_timeline.concat(makeTextAfterAllTrials()); //Transition to end the experiment
+		main_timeline = insertFixationCrossBeforeRDK(main_timeline); //Insert the fixation crosses before all RDKs
+		
 		
 		
 		//---------Run the experiment---------
@@ -414,7 +421,7 @@
 							if (isCorrect){
 								
 								returnString = lineSkip +
-									lineSkip + lineSkip + openText +
+									lineSkip + lineSkip + lineSkip + lineSkip + openText +
 									"That's correct!" +
 									closeText + lineSkip + openText +
 									"Keep up the good work!" +
@@ -438,7 +445,7 @@
 							}
 							else{
 								returnString = lineSkip +
-								lineSkip + lineSkip + openText +
+								lineSkip + lineSkip + lineSkip + lineSkip + openText +
 								"That is incorrect." +
 								closeText + lineSkip + openText +
 								"Remember to try to see where the non-random dots are moving." +
@@ -461,7 +468,74 @@
 			
 			return tempArray;
 			
-		}//End of insertFeedbackIntoTrials
+		}//End of interleaveFeedbackIntoTrials
+		
+		//Function to interleave the Fixation Cross before the stimuli 
+		function insertFixationCrossBeforeRDK(mixedArray){
+			
+			//Create a canvas and attach it to the display element / body
+			var body = document.getElementsByTagName('body')[0];
+			var canvas = document.createElement('canvas');
+			body.appendChild(canvas);
+			
+						
+			//Set up the canvas
+			canvas.width = windowWidth;
+			canvas.height = windowHeight;
+			canvas.style.margin = 0;
+			canvas.style.padding = 0;
+			
+			//Get the context
+			var ctx = canvas.getContext('2d');
+			
+			//Draw the background
+			ctx.fillStyle = "gray";
+			ctx.fillRect(0, 0, windowWidth, windowHeight);
+			
+			//Draw a fixation cross
+			ctx.font = "bold 24px sans-serif";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillStyle = "black";
+			ctx.fillText("+", windowWidth/2, windowHeight/2);
+			
+			//Convert it to a url
+			var fixationCrossURL = canvas.toDataURL();
+			
+			//Remove the canvas from the body/display element
+			canvas.remove();
+						
+			//Create a fixation cross object
+			var fixationCrossObject = {
+				type: 'single-stim',
+				stimulus: fixationCrossURL,
+				timing_post_trial: 1,
+				timing_response: fixationCrossDuration,
+				on_trial_start: function(){
+					//Set the body margins and padding to zero to place the image correctly
+					body.style.margin = 0;
+					body.style.padding = 0;
+				},
+				on_finish: function(){
+					//Reset the margin and padding back to the original so that subsequent plugins will work well
+					body.style.margin = "50px auto 50px auto"; //From jsPsych.css
+					body.style.padding = "auto"; //Guess
+				}
+			};
+						
+			//Loop through the whole array, and splice in the fixation cross before the RDK
+			for (var i = 0; i < mixedArray.length-1; i++){
+					
+				//If the item is an RDK, then slot in the fixation cross right before it
+				if (mixedArray[i].type == 'RDK'){
+					mixedArray.splice(i,0,fixationCrossObject);
+					i++; //Increment the counter again to move to the next element since we inserted the fixation cross in this element.
+				}
+				
+			}//End of for loop
+			
+			return mixedArray;
+		}
 		
 		//Function to end the experiment if the easy correct did not hit the threshold
 		function addInEndExperimentClause(mixedArray){
@@ -573,7 +647,6 @@
 				//Reset the incorrect streak counter
 				incorrectStreakCounter = 0;
 			}
-			
 			
 		}//End of responseWasIncorrect
 		
