@@ -80,6 +80,9 @@
 		var closeText = "</h3>"
 		var lineSkip = "<br>";
 		
+		//Global variable to transer the correct variable from Similarity trial data to Fixation cross trial data
+		var transferCorrect;
+		
 		//Variables for width and height of canvas
 		var windowWidth = window.innerWidth;
 		var windowHeight = window.innerHeight;
@@ -370,7 +373,7 @@
 						
 						//Add the decision to the data object
 						jsPsych.data.addDataToLastTrial({correct: isCorrect});
-						console.log(" ^ Last trial isCorrect: " + isCorrect);
+						console.log(" ^ Last trial correct: " + isCorrect);
 					}
 				};
 				
@@ -516,11 +519,20 @@
 					//Set the body margins and padding to zero to place the image correctly
 					body.style.margin = 0;
 					body.style.padding = 0;
+					
+					//Get the data from the previous trial (the similarity trial data)
+					var dataObject = jsPsych.data.getLastTrialData();
+					//Save it into the global variable
+					transferCorrect = dataObject.correct;
+										
 				},
 				on_finish: function(){
 					//Reset the margin and padding back to the original so that subsequent plugins will work well
 					body.style.margin = "50px auto 50px auto"; //From jsPsych.css
 					body.style.padding = "auto"; //Guess
+					
+					//Save the data of whether the last trial (similarity) is correct in this trial's (fixation cross) data object so that the next trial (RDK) can access it to determine the step size
+					jsPsych.data.addDataToLastTrial({correct: transferCorrect});
 				}
 			};
 						
@@ -570,8 +582,9 @@
 			
 			//Only run these if it is not the first trial
 			if (!firstTrial){
-				//Get the data from the previous trial (the similarity trial data)
+				//Get the data from the previous trial (the fixation cross trial data)
 				var dataObject = jsPsych.data.getLastTrialData();
+				console.log(dataObject);
 				
 				//Check if the subject responded correctly on the previous trial
 				if (dataObject.correct == true){
@@ -581,7 +594,7 @@
 					responseWasIncorrect(); //This function will housekeep for 3Down/1Up and call the changeStepSizePEST function
 				}
 				else{
-					console.log("dataObject.isCorrect is neither true nor false!");
+					console.log("dataObject.correct is neither true nor false!");
 				}
 				
 				previousStepDirection = currentStepDirection; //Pass the current step direction to the previous step direction for use in the next trial
