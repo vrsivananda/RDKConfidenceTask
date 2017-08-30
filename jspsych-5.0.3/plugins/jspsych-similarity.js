@@ -103,7 +103,9 @@ jsPsych.plugins.similarity = (function() {
       // create slider
       display_element.append($('<div>', {
         "id": 'slider',
-        "class": 'sim'
+        "class": 'sim',
+        //[sivaHack] Set the width of the slider
+        "style": 'width: 700px; margin: auto;'
       }));
 
       $("#slider").slider({
@@ -112,6 +114,8 @@ jsPsych.plugins.similarity = (function() {
         max: trial.intervals,
         step: 1,
       });
+      
+      
 
       // show tick marks
       if (trial.show_ticks) {
@@ -154,7 +158,16 @@ jsPsych.plugins.similarity = (function() {
       var num_items = trial.labels.length;
       var item_width = slider_width / num_items;
       var spacing_interval = slider_width / (num_items - 1);
-
+       
+      //[sivaHack] Debugging
+      //$("#sliderlabels").css('background', 'red'); 
+      //console.log(display_element.width());
+      
+      //[sivaHack] Calculate offset to match position of slider
+      var display_element_width = display_element.width();
+      var offset = (display_element_width - slider_width)/2;
+      
+      
       $("#sliderlabels li").each(function(index) {
         $(this).css({
           'display': 'inline-block',
@@ -163,7 +176,7 @@ jsPsych.plugins.similarity = (function() {
           'padding': '0px',
           'text-align': 'center',
           'position': 'absolute',
-          'left': (spacing_interval * index) - (item_width / 2)
+          'left': offset + (spacing_interval * index) - (item_width / 2)
         });
       });
       
@@ -175,7 +188,7 @@ jsPsych.plugins.similarity = (function() {
         'id': 'next',
         'class': 'sim',
         'html': 'Submit Answer',
-        'style': 'text-align: center; font-size: 16px; postion: relative; height: 60px; width: '+ slider_width //[sivaHack]
+        'style': 'text-align: center; font-size: 16px; postion: relative; margin-top: 5px; height: 60px; width: '+ slider_width + ';'//[sivaHack]
       }));
 
       // if prompt is set, show prompt
