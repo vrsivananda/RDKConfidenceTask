@@ -31,7 +31,7 @@
 		//Timing parameters
 		var timingPostTrialText = 1000;
 		var timingPostTrialRDK = 1000;
-		var timingPostTrialSimilarity = 1000;
+		var timingPostTrialSimilarity = 2000;
 		var fixationCrossDuration = 1000;
 		
 		//Variables for practice trials
@@ -46,8 +46,8 @@
 		//Variables for 3 Down / 1 Up
 		var downThreshold = 3; // 3 Down
 		var upThreshold = 1; // 1 Up
-		var upperCoherenceLimit = 0.9;
-		var lowerCoherenceLimit = 0.1;
+		var upperCoherenceLimit = 1.0;
+		var lowerCoherenceLimit = 0.0;
 		var correctStreakCounter = 0;
 		var incorrectStreakCounter = 0;
 		
@@ -182,9 +182,9 @@
 			//First page text
 			var text1 = header + 
 				lineSkip + openText +
-				"You will be presented with a collection of moving dots in the middle of the screen. Some of them will be moving randomly and others (non-random dots) will all be moving to the left or right at the same speed. Your task is to determine in which direction the non-random dots are moving (left or right)." +
+				"You will be presented with a collection of moving dots in the middle of the screen. Some of them will be moving randomly (random dots) and others will all be moving to the left or right at the same speed (non-random dots). Your task is to determine in which direction the non-random dots are moving (left or right)." +
 				closeText + lineSkip + openText +
-				"The proportion of dots that move randomly will range from 10% of the total dots to 90% of the dots. Thus some trials will be easy to judge, but other trials will be more difficult. Try to be as accurate as possible on all trials, even the difficult ones!" +
+				"The proportion of dots that move randomly will range from 0% of the total dots to 100% of the dots. Thus some trials will be easy to judge, but other trials will be more difficult. Try to be as accurate as possible on all trials, even the difficult ones!" +
 				closeText + lineSkip + openText +
 				"Press any key to continue." +
 				closeText;
@@ -194,7 +194,7 @@
 				lineSkip + openText +
 				"After 200ms, the dots will disappear and a slider will show up on the screen. The initial position of the slider will be in the middle. Drag the slider to the left if you think the dots moved to the left. Drag the slider to the right if you think the dots moved to the right." +
 				closeText + lineSkip + openText +
-				"The slider also represents your confidence in the task. Drag the slider based on how confident you are in the direction of the dots that are all moving in the same direction (non-random dots). If you are 100% certain, then drag it all the way to the end. If you are 50% certain, then drag it halfway." +
+				"The slider also represents your confidence in the task. Drag the slider based on how confident you are in the direction of the dots that are all moving in the same direction (non-random dots). For example, if you think there is a 100% chance that the dots moved to the left (i.e. you are certain that they moved to the left), then drag it all the way to the left. However, if you think that there is 75% chance that they moved towards the left, and 25% chance that they moved towards the right, then drag the slider halfway towards the left. The slider will have markers to help you." +
 				closeText + lineSkip + openText +
 				"Press any key to continue." +
 				closeText;
@@ -256,7 +256,7 @@
 				text: lineSkip + openText +
 					"Great job! You have completed all the practice trials." +
 					closeText + lineSkip + openText +
-					"We will now start the actual trials. You will not be receiving feedback for the following trials. This will take around x minutes to complete." +
+					"We will now start the actual trials. You will not be receiving feedback for the following trials. This will take around 20 minutes to complete." +
 					closeText + lineSkip + openText +
 					"Remember to use the full range of the slider to indicate how confident you are in your decision. If you are completely unsure, just make your best guess." +
 					closeText + lineSkip + openText +
@@ -276,7 +276,7 @@
 				text: lineSkip + openText +
 					"Well done! You have completed the experiment." +
 					closeText + lineSkip + openText +
-					"Thank you very much for your time in participating in our experiment. Your participation will contribute to greater understanding of the human visual system." +
+					"Thank you very much for your time in participating in our experiment. Your participation will contribute to a greater understanding of the human visual system." +
 					closeText + lineSkip + openText +
 					"Press any key to officially end the experiment." +
 					closeText
