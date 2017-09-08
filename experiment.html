@@ -26,7 +26,6 @@
 		var choices = [];
 		var coherentDirection_left = 180; //Left and right corresponds to the scale on similarity which ranges from left to right (0 to 100)
 		var coherentDirection_right = 0;
-		var fakeStimuli = "<div style = 'height: 500px; width: 700px;'></div>"; //This adjusts how high the slider is on the screen. Increase the height of the fake stimuli to push the slider down. Decrease the height to move the slider up.
 		
 		//Timing parameters
 		var timingPostTrialText = 1000;
@@ -90,7 +89,8 @@
 		//Change the body element to be the same color as the stimuli background
 		document.getElementsByTagName("body")[0].style.background = "gray";
 		
-		
+		//Set the fake stimuli such that the slider is below the aperture
+		var fakeStimuli = "<div style = 'height: " + ((windowHeight/2) + 200) + "px; width: 700px;'></div>"; //This adjusts how high the slider is on the screen. Increase the height of the fake stimuli to push the slider down. Decrease the height to move the slider up.
 		
 		//----------Make practice trials----------
 		

@@ -109,9 +109,10 @@ jsPsych.plugins.similarity = (function() {
       }));
 
       $("#slider").slider({
-        value: Math.ceil(trial.intervals / 2),
-        min: 1,
-        max: trial.intervals,
+        //[sivaHack] Set 0,50,100 as hard-coded values
+        value: 50,
+        min: 0,
+        max: 100,
         step: 1,
       });
       
