@@ -46,7 +46,7 @@
 		var downThreshold = 3; // 3 Down
 		var upThreshold = 1; // 1 Up
 		var upperCoherenceLimit = 1.0;
-		var lowerCoherenceLimit = 0.0;
+		var lowerCoherenceLimit = 0.0000000001; //Practically 0, but cannot set to 0 because JavaScript evaluates it as false in the RDK plugin
 		var correctStreakCounter = 0;
 		var incorrectStreakCounter = 0;
 		
@@ -585,7 +585,6 @@
 			if (!firstTrial){
 				//Get the data from the previous trial (the fixation cross trial data)
 				var dataObject = jsPsych.data.getLastTrialData();
-				console.log(dataObject);
 				
 				//Check if the subject responded correctly on the previous trial
 				if (dataObject.correct == true){
