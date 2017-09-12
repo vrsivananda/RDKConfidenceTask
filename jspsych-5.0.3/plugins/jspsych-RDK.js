@@ -180,7 +180,10 @@ jsPsych.plugins["RDK"] = (function() {
 		
 		//Declare global variable to store the frame rate of the trial
 		var frameRate = []; //How often the monitor refreshes, in ms. Currently an array to store all the intervals. Will be converted into a single number (the average) in end_trial function.
-
+		
+		//variable to store how many frames were presented.  [sivaHack]
+		var numberOfFrames = 0;
+		
 		//Calculate the x and y jump sizes for coherent dots
 		var coherentJumpSizeX = calculateCoherentJumpSizeX(coherentDirection);
 		var coherentJumpSizeY = calculateCoherentJumpSizeY(coherentDirection);
@@ -246,6 +249,9 @@ jsPsych.plugins["RDK"] = (function() {
 			//Stop the dot motion animation
 			stopDotMotion = true;
 			
+			//Store the number of Frames [sivaHack]
+			numberOfFrames = frameRate.length; 
+			
 			//Calculate the average frame rate
 			if(frameRate.length > 0){//Check to make sure that the array is not empty
 				frameRate = frameRate.reduce((total,current) => total + current)/frameRate.length; //Sum up all the elements in the array
@@ -281,7 +287,8 @@ jsPsych.plugins["RDK"] = (function() {
 				"RDK_type": trial.RDK_type,
 				"aperture_type": trial.aperture_type,
 				"reinsert_type": trial.reinsert_type,
-				"frame_rate": frameRate //The average frame rate for the trial
+				"frame_rate": frameRate, //The average frame rate for the trial
+				"number_of_frames": numberOfFrames
 			}
 			
 			//Remove the canvas as the child of the display_element element
