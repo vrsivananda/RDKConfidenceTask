@@ -38,8 +38,8 @@ jsPsych.plugins["RDK"] = (function() {
 		//--------------------------------------
 		
 		//If any of the parameters are functions, evaluate them now
-    	trial = jsPsych.pluginAPI.evaluateFunctionParameters(trial);
-    
+		trial = jsPsych.pluginAPI.evaluateFunctionParameters(trial);
+		
 		//Note on '||' logical operator: If the first option is 'undefined', it evalutes to 'false' and the second option is returned as the assignment
 		trial.choices = trial.choices || [];
 		trial.correct_choice = trial.correct_choice; 
@@ -141,9 +141,9 @@ jsPsych.plugins["RDK"] = (function() {
 		var canvas = document.createElement("canvas");
 		display_element.append(canvas); //'append' is the jQuery equivalent of 'appendChild' in the DOM method
 		
+		
 		//The document body IS 'display_element' (i.e. <body class="jspsych-display-element"> .... </body> )
 		var body = document.getElementsByClassName("jspsych-display-element")[0];
-		
 		//Remove the margins and paddings of the display_element
 		body.style.margin = 0;
 		body.style.padding = 0;
@@ -181,7 +181,7 @@ jsPsych.plugins["RDK"] = (function() {
 		//Declare global variable to store the frame rate of the trial
 		var frameRate = []; //How often the monitor refreshes, in ms. Currently an array to store all the intervals. Will be converted into a single number (the average) in end_trial function.
 		
-		//variable to store how many frames were presented.  [sivaHack]
+		//variable to store how many frames were presented.
 		var numberOfFrames = 0;
 		
 		//Calculate the x and y jump sizes for coherent dots
@@ -200,6 +200,9 @@ jsPsych.plugins["RDK"] = (function() {
 		
 		//Initialize stopping condition for animateDotMotion function that runs in a loop
 		var stopDotMotion = false;
+		
+		//Variable to control the frame rate, to ensure that the first frame is skipped because it follows a different timing
+		var firstFrame = true; //Used to skip the first frame in animate function below (in animateDotMotion function)
 
 		//Initialize object to store the response data. Default values of -1 are used if the trial times out and the subject has not pressed a valid key
 		var response = {
@@ -249,8 +252,11 @@ jsPsych.plugins["RDK"] = (function() {
 			//Stop the dot motion animation
 			stopDotMotion = true;
 			
-			//Store the number of Frames [sivaHack]
-			numberOfFrames = frameRate.length; 
+			//Store the number of frames
+			numberOfFrames = frameRate.length;
+			
+			//Variable to store the frame rate array
+			var frameRateArray = frameRate;
 			
 			//Calculate the average frame rate
 			if(frameRate.length > 0){//Check to make sure that the array is not empty
@@ -288,7 +294,8 @@ jsPsych.plugins["RDK"] = (function() {
 				"aperture_type": trial.aperture_type,
 				"reinsert_type": trial.reinsert_type,
 				"frame_rate": frameRate, //The average frame rate for the trial
-				"number_of_frames": numberOfFrames
+				"frame_rate_array": JSON.stringify(frameRateArray), //The array of ms per frame in this trial, in the form of a JSON string
+				"number_of_frames": numberOfFrames //The number of frames in this trial
 			}
 			
 			//Remove the canvas as the child of the display_element element
@@ -774,17 +781,8 @@ jsPsych.plugins["RDK"] = (function() {
 			var frameRequestID = window.requestAnimationFrame(animate);
 			
 			//Timestamp used to calculate the time interval between frames
-			var previousTimestamp = performance.now(); 
+			var previousTimestamp;
 			
-			//Start to listen to subject's key responses
-			startKeyboardListener(); 
-			
-			//If the trial duration is set, then set a timer to count down and call the end_trial function when the time is up
-			//(If the subject did not press a valid keyboard response within the trial duration, then this will end the trial)
-			if (trial.trial_duration > 0) {
-				timeoutID = window.setTimeout(end_trial,trial.trial_duration); //This timeoutID is then used to cancel the timeout should the subject press a valid key
-			}
-		
 			function animate() {
 				//If stopping condition has been reached, then stop the animation
 				if (stopDotMotion) {
@@ -792,11 +790,35 @@ jsPsych.plugins["RDK"] = (function() {
 				}
 				//Else continue with another frame request
 				else {
-					updateDots(); //Update the dots to their new positions
-					draw(); //Draw the dots on the canvas
 					frameRequestID = window.requestAnimationFrame(animate); //Calls for another frame request
-					frameRate.push(performance.now()-previousTimestamp); //Push the interval into the frameRate array
-					previousTimestamp = performance.now(); //Reset the timestamp
+					
+					//If it is the first frame, then set the timing variables up
+					if(firstFrame){
+						
+						//Start to listen to subject's key responses
+						startKeyboardListener(); 
+						
+						//If the trial duration is set, then set a timer to count down and call the end_trial function when the time is up
+						//(If the subject did not press a valid keyboard response within the trial duration, then this will end the trial)
+						if (trial.trial_duration > 0) {
+							timeoutID = window.setTimeout(end_trial,trial.trial_duration); //This timeoutID is then used to cancel the timeout should the subject press a valid key
+						}
+						
+						//Set the timestamp to calculate the time per frame
+						previousTimestamp = performance.now();
+						
+						//Set the firstFrame to false so that the next frame will be the normal dot motion animation
+						firstFrame = false;
+					}
+					//If it is not the first frame, then update and draw on canvas
+					else{
+						updateDots(); //Update the dots to their new positions
+						draw(); //Draw the dots on the canvas
+						var currentTimeStamp = performance.now(); //Variable to hold current timestamp
+						frameRate.push(currentTimeStamp -previousTimestamp); //Push the interval into the frameRate array
+						previousTimestamp = currentTimeStamp; //Reset the timestamp
+					}
+					
 				}
 			}
 		}
