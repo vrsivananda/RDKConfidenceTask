@@ -82,6 +82,8 @@
 		//Global variable to transer the correct variable from Similarity trial data to Fixation cross trial data
 		var transferCorrect;
 		
+		var trialCounter = 0; //[sivaHack]
+		
 		//Variables for width and height of canvas
 		var windowWidth = window.innerWidth;
 		var windowHeight = window.innerHeight;
@@ -337,7 +339,7 @@
 
 		//Function to insert a similarity plugin after every trial
 		function interleaveSimilarityIntoTrials(RDKTrialsArray){
-			console.log(RDKTrialsArray);
+			//[sivaHack]console.log(RDKTrialsArray);
 			//Create a temporary array to hold both types (RDK and Similarity)
 			var tempArray = [];
 			
@@ -374,7 +376,7 @@
 						
 						//Add the decision to the data object
 						jsPsych.data.addDataToLastTrial({correct: isCorrect});
-						console.log(" ^ Last trial correct: " + isCorrect);
+						//[sivaHack]console.log(" ^ Last trial correct: " + isCorrect);
 					}
 				};
 				
@@ -581,6 +583,9 @@
 			
 			console.log("-----------------------------");
 			
+			trialCounter++; //[sivaHack]
+			console.log(trialCounter);//[sivaHack]
+			
 			//Only run these if it is not the first trial
 			if (!firstTrial){
 				//Get the data from the previous trial (the fixation cross trial data)
@@ -604,11 +609,11 @@
 				firstTrial = false;
 			}//End of if(!firstTrial)
 			
-			console.log("currentCoherence in staircase() is " + currentCoherence);
+			//[sivaHack]console.log("currentCoherence in staircase() is " + currentCoherence);
 			//Return the currentCoherence into the trial
 			return currentCoherence; 
 			
-			console.log("-----------------------------");
+			//[sivaHack]console.log("-----------------------------");
 			
 		}//End of staircase
 		
@@ -683,7 +688,7 @@
 				reversal = (previousStepDirection == currentStepDirection) ? false : true;
 			}
 			
-			console.log("reversal: " + reversal);
+			//[sivaHack]console.log("reversal: " + reversal);
 			
 			//If current step is a reversal of the previous step
 			if(reversal){
@@ -702,7 +707,7 @@
 				
 				//Half the step size everytime it reverses [Rule 1]
 				halveStepSize();
-				console.log("step size halved.");
+				//[sivaHack]console.log("step size halved.");
 				
 				//Step size did not double, so we reset it back to false (this variable is used below in the else statement)
 				stepSizeJustDoubled = false;
@@ -717,12 +722,12 @@
 				if (stepStreakCounter >= stepThreshold){
 					doubleStepSize();
 					stepSizeJustDoubled = true;
-					console.log("step size doubled.");
+					//[sivaHack]console.log("step size doubled.");
 				}
 				//Else step size did not double
 				else{
 					stepSizeJustDoubled = false;
-					console.log("step size remained the same because not hit threshold yet")
+					//[sivaHack]console.log("step size remained the same because not hit threshold yet")
 				}
 				
 				//If we go in the same direction, we stay with the same step size [Rule 2]
@@ -730,7 +735,7 @@
 				
 			}//End of else (not reversal)
 			
-			console.log("New step size = " + currentStepSize);
+			//[sivaHack]console.log("New step size = " + currentStepSize);
 			
 		}//End of changeStepSizePEST
 		
