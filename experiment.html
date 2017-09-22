@@ -22,7 +22,7 @@
 		var trialsPerCondition = 50;
 		var RDKType = 3;
 		var numberOfDots = 200;
-		var currentCoherence = 0.8; //Starting coherence
+		var currentCoherence = 0.7; //Starting coherence
 		var choices = [];
 		var coherentDirection_left = 180; //Left and right corresponds to the scale on similarity which ranges from left to right (0 to 100)
 		var coherentDirection_right = 0;
@@ -51,9 +51,9 @@
 		var incorrectStreakCounter = 0;
 		
 		//Variables for PEST
-		var currentStepSize = 0.6; //Global variable to hold the current step size
-		var minimumStepSize = 0.0375; //Smallest step size
-		var maximumStepSize = 0.6 //Largest step size
+		var currentStepSize = 0.32; //Global variable to hold the current step size
+		var minimumStepSize = 0.01; //Smallest step size
+		var maximumStepSize = 0.32; //Largest step size
 		var stepThreshold = 3; //How many steps in the same direction before doubling
 		var firstTrial = true;
 		var firstStep = true;
