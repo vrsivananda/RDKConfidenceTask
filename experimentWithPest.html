@@ -1,0 +1,588 @@
+<! doctype html>
+<html>
+	<head>
+		<title> RDK Experiment</title>
+		 <script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		 <script src = "jspsych-5.0.3/jspsych.js"></script>
+		 <script src = "jspsych-5.0.3/plugins/jspsych-RDK.js"></script> <!--Include the script for the RDK plugin-->
+		 <script src = "jspsych-5.0.3/plugins/jspsych-text.js"></script>
+		 <script src = "jspsych-5.0.3/plugins/jspsych-single-stim.js"></script>
+		 <link href = "jspsych-5.0.3/css/jspsych.css" rel = "stylesheet" type = "text/css"></link>
+		 <script src = "jspsych-5.0.3/plugins/jspsych-similarity.js"></script>
+		 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script> <!--For similarity plugin-->
+		 <script src = "pest.js"></script> <!--For pest procedure-->
+		<link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/black-tie/jquery-ui.min.css" rel="stylesheet" type="text/css"></link><!--For similarity plugin-->
+	</head>
+	<body>
+		<div id="jspsych-target"></div>
+	</body>
+	<script>
+
+		//PARAMETERS
+		var trialDuration = 200;
+		var trialsPerCondition = 50;
+		var RDKType = 3;
+		var numberOfDots = 200;
+		var currentCoherence = 0.7; //Starting coherence
+		var choices = [];
+		var coherentDirection_left = 180; //Left and right corresponds to the scale on similarity which ranges from left to right (0 to 100)
+		var coherentDirection_right = 0;
+		
+		//Timing parameters
+		var timingPostTrialText = 1000;
+		var timingPostTrialRDK = 1000;
+		var timingPostTrialSimilarity = 2000;
+		var fixationCrossDuration = 1000;
+		
+		//Variables for practice trials
+		var easyCoherence = 0.8;
+		var hardCoherence = 0.2;
+		var numberOfEasyPracticeTrials = 6; //Must be even number (pair of left/right). Odd number will be rounded down to even.
+		var numberOfHardPracticeTrials = 4; //Must be even number (pair of left/right). Odd number will be rounded down to even.
+		var easyCorrectThreshold = 4; //If they get less than this value, kick them out
+		var easyCorrectCounter = 0;
+		var hardCorrectCounter = 0;
+		
+		//Variables for 3 Down / 1 Up
+		var downThreshold = 3; // 3 Down
+		var upThreshold = 1; // 1 Up
+		var upperCoherenceLimit = 1.0;
+		var lowerCoherenceLimit = 0.0000000001; //Practically 0, but cannot set to 0 because JavaScript evaluates it as false in the RDK plugin
+		var correctStreakCounter = 0;
+		var incorrectStreakCounter = 0;
+		
+		//Variables for PEST
+		var currentStepSize = 0.32; //Global variable to hold the current step size
+		var minimumStepSize = 0.01; //Smallest step size
+		var maximumStepSize = 0.32; //Largest step size
+		
+		//Create the parameter object for PEST
+		var pestParameters = {
+			starting_intensity: currentCoherence,
+			down_threshold: downThreshold,
+			up_threshold: upThreshold,
+			upper_intensity_limit: upperCoherenceLimit,
+			lower_intensity_limit: lowerCoherenceLimit,
+			starting_step_size: currentStepSize,
+			min_step_size: minimumStepSize,
+			max_step_size: maximumStepSize
+		};
+		
+		//Initialize the pest object
+		var myPest =  new pest(pestParameters);
+		
+		//Prototype of a trial to be modified in the functions based on what is needed
+		//coherent direction and coherence parameters still need to be specified (will do so in the makeTwoTrialsArray function below)
+		var typicalTrial = {
+			type: "RDK", 
+			timing_post_trial: timingPostTrialRDK, //The Inter Trial Interval. You can either have no ITI, or change the display element to be the same color as the stimuli background to prevent flashing between trials
+			number_of_dots: numberOfDots, //Total number of dots in the aperture
+			RDK_type: RDKType, //The type of RDK used
+			trial_duration: trialDuration //Duration of each trial in ms
+		};
+		
+		
+		//Shortcuts for text (used in the text-making functions)
+		var openText = "<h3>"
+		var closeText = "</h3>"
+		var lineSkip = "<br>";
+		
+		//Global variable to transer the correct variable from Similarity trial data to Fixation cross trial data
+		var transferCorrect;
+		
+		var trialCounter = 0; //[sivaHack]
+		
+		//Variables for width and height of canvas
+		var windowWidth = window.innerWidth;
+		var windowHeight = window.innerHeight;
+		
+		//Change the body element to be the same color as the stimuli background
+		document.getElementsByTagName("body")[0].style.background = "gray";
+		
+		//Set the fake stimuli such that the slider is below the aperture
+		var fakeStimuli = "<div style = 'height: " + (windowHeight/2)+ "px; width: 700px;'></div>"; //This adjusts how high the slider is on the screen. Increase the height of the fake stimuli to push the slider down. Decrease the height to move the slider up.
+		
+		//----------Make practice trials----------
+		
+		
+		//---EASY TRIALS---
+		
+		//Make two trials for easy practice
+		var twoEasyPracticeTrialsArray = makeTwoTrialsArray("easy"); //A 2-element array that contains one left trial and one right trial (i.e. [left_trial, right_trial])
+		
+		//Duplicate and shuffle the array
+		var  randomizedEasyPracticeTrials = jsPsych.randomization.repeat(twoEasyPracticeTrialsArray,Math.floor(numberOfEasyPracticeTrials/2));
+		
+		//Add in the similarity plugin after each trial
+		var allEasyPracticeTrialsWithoutFeedback = interleaveSimilarityIntoTrials(randomizedEasyPracticeTrials);
+		
+		//Add in the feedback after each RDK and similarity trial
+		var allEasyPracticeTrialsWithFeedback = interleaveFeedbackIntoTrials(allEasyPracticeTrialsWithoutFeedback); //This will be pushed into the main timeline below
+		
+		//Add in the clause at the last easy practice trial to end the experiment if the number of correct responses for easy practice trials was not reached
+		allEasyPracticeTrialsWithFeedback = addInEndExperimentClause(allEasyPracticeTrialsWithFeedback);
+		
+		//---HARD TRIALS---
+		
+		//Make two trials for easy practice
+		var twoHardPracticeTrialsArray = makeTwoTrialsArray("hard"); //A 2-element array that contains one left trial and one right trial (i.e. [left_trial, right_trial])
+		
+		//Duplicate and shuffle the array
+		var  randomizedHardPracticeTrials = jsPsych.randomization.repeat(twoHardPracticeTrialsArray,Math.floor(numberOfHardPracticeTrials/2));
+		
+		//Add in the similarity plugin after each trial
+		var allHardPracticeTrialsWithoutFeedback = interleaveSimilarityIntoTrials(randomizedHardPracticeTrials);
+		
+		//Add in the feedback after each RDK and similarity trial
+		var allHardPracticeTrialsWithFeedback = interleaveFeedbackIntoTrials(allHardPracticeTrialsWithoutFeedback); //This will be pushed into the main timeline below
+		
+		
+		//----------Make actual trials----------
+		
+		//Make two trials for the actual trials (staircase)
+		var twoActualTrialsArray = makeTwoTrialsArray("staircase"); //A 2-element array that contains one left trial and one right trial (i.e. [left_trial, right_trial])
+		
+		//Duplicate and shuffle the array
+		var  randomizedActualTrials = jsPsych.randomization.repeat(twoActualTrialsArray,trialsPerCondition);
+
+		//Add in the similarity plugin after each trial
+		var allActualTrials = interleaveSimilarityIntoTrials(randomizedActualTrials);
+		
+		
+		//------Main Timeline------
+		
+		//The main timeline to be fed into jsPsych.init
+		var main_timeline = [];
+		main_timeline = main_timeline.concat(makeInstructionsBlock()); //Instructions
+		main_timeline = main_timeline.concat(allEasyPracticeTrialsWithFeedback); //Easy practice trials
+		main_timeline = main_timeline.concat(makeTextBetweenEasyAndHardPracticeTrials()); //Transition to Hard practice trials
+		main_timeline = main_timeline.concat(allHardPracticeTrialsWithFeedback); //Hard practice trials
+		main_timeline = main_timeline.concat(makeTextBeforeActualTrials()); //Transition to actual trials
+		main_timeline = main_timeline.concat(allActualTrials); //Actual trials
+		main_timeline = main_timeline.concat(makeTextAfterAllTrials()); //Transition to end the experiment
+		main_timeline = insertFixationCrossBeforeRDK(main_timeline); //Insert the fixation crosses before all RDKs
+		
+		
+		
+		//---------Run the experiment---------
+		
+		//Initiate the experiment
+		jsPsych.init({
+			timeline: main_timeline,
+			on_finish: function(){ //Execute this when the experiment finishes
+				jsPsych.data.localSave('testSave.csv', 'csv'); //Save the data locally in a .csv file
+				//jsPsych.data.displayData(); //Display the data onto the browser screen
+			}
+		});
+
+		//=========================================
+		//========Functions below this line========
+		//=========================================
+		
+		
+		//------Text-creation Functions Begin-------
+		
+		
+		//Function to create instructions
+		function makeInstructionsBlock(){
+			
+			//Shortcuts for the text
+			var header = "<h2> Instructions: </h2>";
+			
+			//First page text
+			var text1 = header + 
+				lineSkip + openText +
+				"You will be presented with a collection of moving dots in the middle of the screen. Some of them will be moving randomly (random dots) and others will all be moving to the left or right at the same speed (non-random dots). Your task is to determine in which direction the non-random dots are moving (left or right)." +
+				closeText + lineSkip + openText +
+				"The proportion of dots that move randomly will range from 0% of the total dots to 100% of the dots. Thus some trials will be easy to judge, but other trials will be more difficult. Try to be as accurate as possible on all trials, even the difficult ones!" +
+				closeText + lineSkip + openText +
+				"Press any key to continue." +
+				closeText;
+				
+			//Second page text	
+			var text2 = header + 
+				lineSkip + openText +
+				"After 200ms, the dots will disappear and a slider will show up on the screen. The initial position of the slider will be in the middle. Drag the slider to the left if you think the dots moved to the left. Drag the slider to the right if you think the dots moved to the right." +
+				closeText + lineSkip + openText +
+				"The slider also represents your confidence in the task. Drag the slider based on how confident you are in the direction of the dots that are all moving in the same direction (non-random dots). For example, if you think there is a 100% chance that the dots moved to the left (i.e. you are certain that they moved to the left), then drag it all the way to the left. However, if you think that there is 75% chance that they moved towards the left, and 25% chance that they moved towards the right, then drag the slider halfway towards the left. The slider will have markers to help you." +
+				closeText + lineSkip + openText +
+				"Press any key to continue." +
+				closeText;
+			
+			//Third page text	
+			var text3 = header +
+				lineSkip + openText +
+				"Also, please note that you will not be allowed to proceed unless you drag the slider to the left or right of the middle. If the slider is not moved, you will not be able to continue to the next trial. If you are completely unsure of which direction the non-random dots moved, just make your best guess."	+
+				closeText + lineSkip + openText +
+				"You will be given 10 practice trials before the start of the actual experiment. Make sure that you take the time to understand the task and are comfortable with the layout of the screen." +
+				closeText + lineSkip + openText +
+				"This is the end of the instructions. The practice trials will begin in the next screen. Please use the <b><i>ENTIRE RANGE</i></b> of the confidence slider during this task, being as precise as you can in selecting not only the direction the dots are moving, but also in <i>specifying how confident you are</i>." +
+				closeText + lineSkip + openText +
+				"Press any key to begin the practice trials." +
+				closeText;
+			
+			//The block of instructions containing all the pages of text above
+			var instructions_block = {
+				type: 'text',
+				timing_post_trial: timingPostTrialText,
+				timeline: [
+					{text: text1},
+					{text: text2},
+					{text: text3}
+				]
+			};
+			
+			return instructions_block;
+		}//End of makeInstructionsBlock
+		
+		//Function to make the text between the easy and hard practice trials
+		function makeTextBetweenEasyAndHardPracticeTrials(){
+						
+			//The block of text
+			var textBetweenEasyAndHardPracticeTrials = {
+				type: 'text',
+				timing_post_trial: timingPostTrialText,
+				text: lineSkip + openText +
+					"Great work! Those were the easy practice trials. As you progress through the experiment, trials are likely to get more difficult." +
+					closeText + lineSkip + openText +
+					"The next four practice trials will be much harder. Try your best to determine the direction of the dots that are all moving in the same direction." +
+					closeText + lineSkip + openText +
+					"Remember to use the entire range of the slider to indicate how confident you are in your decision. If you are completely unsure, just make your best guess." +
+					closeText + lineSkip + openText +
+					"Press any key to continue." +
+					closeText
+			};
+			
+			return textBetweenEasyAndHardPracticeTrials;
+		}
+		
+		
+		//Function to make the text before actual trials
+		function makeTextBeforeActualTrials(){
+			
+			var textBeforeActualTrials = {
+				type: 'text',
+				timing_post_trial: timingPostTrialText,
+				text: lineSkip + openText +
+					"Great job! You have completed all the practice trials." +
+					closeText + lineSkip + openText +
+					"We will now start the actual trials. You will not be receiving feedback for the following trials. This will take around 20 minutes to complete." +
+					closeText + lineSkip + openText +
+					"Remember to use the full range of the slider to indicate how confident you are in your decision. If you are completely unsure, just make your best guess." +
+					closeText + lineSkip + openText +
+					"Press any key to continue." +
+					closeText
+			}
+			
+			return textBeforeActualTrials;
+		}
+		
+		//Function to make the text after all trials
+		function makeTextAfterAllTrials(){
+			
+			var textBeforeActualTrials = {
+				type: 'text',
+				timing_post_trial: timingPostTrialText,
+				text: lineSkip + openText +
+					"Well done! You have completed the experiment." +
+					closeText + lineSkip + openText +
+					"Thank you very much for your time in participating in our experiment. Your participation will contribute to a greater understanding of the human visual system." +
+					closeText + lineSkip + openText +
+					"Press any key to officially end the experiment." +
+					closeText
+			}
+			
+			return textBeforeActualTrials;
+		}
+		
+		
+		//------Text-creation Functions End-------
+		
+		//------Timeline (Array-handler) Functions Begin-------
+		
+		//Function to make the two trials in one array
+		function makeTwoTrialsArray(coherenceType){
+			
+			//Make a copy of the typical trial 
+			var tempTrial = Object.assign({},typicalTrial);
+			
+			//Add in the coherence depending on the parameter
+			//If staircase, add in the staircase function
+			if(coherenceType == "staircase"){
+				tempTrial.trialType = "actual";
+				tempTrial.coherence = function(){
+					return myPest.staircase(jsPsych.data.getLastTrialData().correct);
+				} //To be evaluated at the start of trial
+			}
+			//Else if easy, then set coherence to easy coherence level
+			else if(coherenceType == "easy"){
+				tempTrial.coherence = easyCoherence;
+				tempTrial.difficulty = "easy";
+				tempTrial.trialType = "practice";
+			}
+			//Else if hard, then set coherence to hard coherence level
+			else if(coherenceType == "hard"){
+				tempTrial.coherence = hardCoherence;
+				tempTrial.difficulty = "hard";
+				tempTrial.trialType = "practice";
+			}
+			//Error checking. Should not run.
+			else{
+				console.log("Invalid coherenceType (in makeTwoTrialsArray function). Defaulting to default coherence level.")
+			}
+									
+			//Left trial
+			var left_RDK_trial = Object.assign({},tempTrial); //Copy the temp trial object
+			left_RDK_trial.coherent_direction = coherentDirection_left;//Add in the coherent direction
+			
+			//Right trials
+			var right_RDK_trial = Object.assign({},tempTrial); //Copy the temp trial object
+			right_RDK_trial.coherent_direction = coherentDirection_right;//Add in the coherent direction
+						
+			return [left_RDK_trial, right_RDK_trial]; //Return a 2-element array of left and right trial objects
+			
+		}//End of makeTwoTrialsArray
+		
+		
+
+		//Function to insert a similarity plugin after every trial
+		function interleaveSimilarityIntoTrials(RDKTrialsArray){
+			//[sivaHack]console.log(RDKTrialsArray);
+			//Create a temporary array to hold both types (RDK and Similarity)
+			var tempArray = [];
+			
+			//Loop through each of the RDK trials
+			for (var i = 0; i < RDKTrialsArray.length; i++){
+				
+				//Load the current trial into a variable for easy handling
+				var currentRDKTrial = RDKTrialsArray[i];
+				
+				//For each RDK trial, create a similarity trial based off the direction of that trial
+				var similarityTask = {
+					type: 'similarity',
+					is_html: true,
+					stimuli: [fakeStimuli, fakeStimuli], //No stimuli for this plugin
+					timing_post_trial: timingPostTrialSimilarity,
+					labels: ["100%<br>Left", "75%<br>Left", "|<br>50/50", "75%<br>Right","100%<br>Right"],
+					timing_first_stim: 1, //Setting all the timings to zero so that we only use the timing_post_trial to control the timings
+					timing_image_gap: 1,
+					prompt: "<h4> Move the slider to show how confident you are in the direction of the dots.</h4>",
+					data: {
+						coherent_direction: currentRDKTrial.coherent_direction, //Tag the direction of the previous RDK trial onto the similarity task
+						difficulty: currentRDKTrial.difficulty, //Tag the difficulty of the previous RDK trial onto the similarity task
+						trialType: currentRDKTrial.trialType //Tag the trial type of the previous RDK trial onto the similarity task
+					}, 
+					on_finish: function(dataObject){
+						
+						//Variable to keep track of whether the subject responded correctly
+						var isCorrect = false;
+							
+						//If the direction of dots correspond with the direction of subject's response, the subject's response is correct
+						if ( (dataObject.coherent_direction == coherentDirection_left && dataObject.sim_score < 50) ||(dataObject.coherent_direction == coherentDirection_right && dataObject.sim_score > 50) ){
+							isCorrect = true;
+						} 
+						
+						//Add the decision to the data object
+						jsPsych.data.addDataToLastTrial({correct: isCorrect});
+						//[sivaHack]console.log(" ^ Last trial correct: " + isCorrect);
+					}
+				};
+				
+				//Push in the RDK trial
+				tempArray.push(currentRDKTrial);
+				//Push in the similarity task
+				tempArray.push(similarityTask);
+				
+			}//End of for loop
+			
+			return tempArray;
+			
+		}//End of interleaveSimilarityIntoTrial
+		
+		//Function to insert a feedback screen (text plugin) after every RDK and similarity trial
+		function interleaveFeedbackIntoTrials(RDKAndSimilarityTrialsArray){
+			
+			//Create a temporary array to hold both types (RDK and Similarity)
+			var tempArray = [];
+			
+			//Loop through every pair of RDK + Similarity trials
+			for (var i = 0; i < RDKAndSimilarityTrialsArray.length; i++){
+				
+				//Load the current trial into a variable for easy handling
+				var currentTrial = RDKAndSimilarityTrialsArray[i]; //This is either a RDK trial (if i is even) or Similarity trial (if i is odd)
+				
+				//Push the trial in regardless of which trial it is
+				tempArray.push(currentTrial);
+				
+				//If i is odd, then it is a Similarity trial. Once it is pushed, we push in the feedback trial
+				if (i%2 == 1){
+					
+					//Create the feedback trial to be pushed in
+					var feedbackTrial = {
+						type: 'text',
+						timing_post_trial: timingPostTrialText,
+						text: function(){
+							
+							//Declare the string to return
+							var returnString = ""; //
+							
+							//Get the data from the previous trial (the similarity trial data)
+							var dataObject = jsPsych.data.getLastTrialData();
+							
+							//Get the correctness of the previous trial
+							var isCorrect = dataObject.correct;
+														
+							//If it is correct, then display text that says that the subject did well
+							if (isCorrect){
+								
+								returnString = lineSkip +
+									lineSkip + lineSkip + lineSkip + lineSkip + openText +
+									"That's correct!" +
+									closeText + lineSkip + openText +
+									"Keep up the good work!" +
+									closeText + lineSkip + openText +
+									"Press any key to continue." +
+									closeText;
+								
+								//If it is an easy trial, increase the easy counter
+								if (dataObject.difficulty == "easy"){
+									easyCorrectCounter++;
+								}
+								//Else if it is an easy trial, increase the easy counter
+								else if (dataObject.difficulty == "hard"){
+									hardCorrectCounter++;
+								}
+								//Error checking. This should not run
+								else{
+									console.log("Error: Feedback trial is neither hard nor easy.");
+								}
+								
+							}
+							else{
+								returnString = lineSkip +
+								lineSkip + lineSkip + lineSkip + lineSkip + openText +
+								"That is incorrect." +
+								closeText + lineSkip + openText +
+								"Remember to try to see where the non-random dots are moving." +
+								closeText + lineSkip + openText +
+								"Please try again." +
+								closeText + lineSkip + openText +
+								"Press any key to continue." +
+								closeText;
+							}
+								
+							return returnString;
+						}//End of text function
+					};//End of object definition
+					
+					//Push the feedback trial object into the tempArray
+					tempArray.push(feedbackTrial)
+				}//End of if
+				
+			}//End of for loop
+			
+			return tempArray;
+			
+		}//End of interleaveFeedbackIntoTrials
+		
+		//Function to interleave the Fixation Cross before the stimuli 
+		function insertFixationCrossBeforeRDK(mixedArray){
+			
+			//Create a canvas and attach it to the display element / body
+			var body = document.getElementsByTagName('body')[0];
+			var canvas = document.createElement('canvas');
+			body.appendChild(canvas);
+			
+						
+			//Set up the canvas
+			canvas.width = windowWidth;
+			canvas.height = windowHeight;
+			canvas.style.margin = 0;
+			canvas.style.padding = 0;
+			
+			//Get the context
+			var ctx = canvas.getContext('2d');
+			
+			//Draw the background
+			ctx.fillStyle = "gray";
+			ctx.fillRect(0, 0, windowWidth, windowHeight);
+			
+			//Draw a fixation cross
+			ctx.font = "bold 24px sans-serif";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillStyle = "black";
+			ctx.fillText("+", windowWidth/2, windowHeight/2);
+			
+			//Convert it to a url
+			var fixationCrossURL = canvas.toDataURL();
+			
+			//Remove the canvas from the body/display element
+			canvas.remove();
+						
+			//Create a fixation cross object
+			var fixationCrossObject = {
+				type: 'single-stim',
+				stimulus: fixationCrossURL,
+				timing_post_trial: 1,
+				timing_response: fixationCrossDuration,
+				on_trial_start: function(){
+					//Set the body margins and padding to zero to place the image correctly
+					body.style.margin = 0;
+					body.style.padding = 0;
+					
+					//Get the data from the previous trial (the similarity trial data)
+					var dataObject = jsPsych.data.getLastTrialData();
+					//Save it into the global variable
+					transferCorrect = dataObject.correct;
+										
+				},
+				on_finish: function(){
+					//Reset the margin and padding back to the original so that subsequent plugins will work well
+					body.style.margin = "50px auto 50px auto"; //From jsPsych.css
+					body.style.padding = "auto"; //Guess
+					
+					//Save the data of whether the last trial (similarity) is correct in this trial's (fixation cross) data object so that the next trial (RDK) can access it to determine the step size
+					jsPsych.data.addDataToLastTrial({correct: transferCorrect});
+				}
+			};
+						
+			//Loop through the whole array, and splice in the fixation cross before the RDK
+			for (var i = 0; i < mixedArray.length-1; i++){
+					
+				//If the item is an RDK, then slot in the fixation cross right before it
+				if (mixedArray[i].type == 'RDK'){
+					mixedArray.splice(i,0,fixationCrossObject);
+					i++; //Increment the counter again to move to the next element since we inserted the fixation cross in this element.
+				}
+				
+			}//End of for loop
+			
+			return mixedArray;
+		}
+		
+		//Function to end the experiment if the easy correct did not hit the threshold
+		function addInEndExperimentClause(mixedArray){
+			
+			mixedArray[mixedArray.length-1].on_finish = function(){
+				if(easyCorrectCounter < easyCorrectThreshold){
+					jsPsych.endExperiment(lineSkip + lineSkip + lineSkip + openText +
+						"Thank you for participating in this experiment." +
+						closeText +	lineSkip + lineSkip + lineSkip + openText +
+						"We will be compensating you $0.25 for your time." +
+						closeText + lineSkip + lineSkip + lineSkip + openText +
+						"You may exit the experiment." +
+						closeText);
+				}
+				else{
+					return false;
+				}
+			}
+			
+			return mixedArray;
+		}
+		
+		//------Timeline (Array-handler) Functions End-------
+		
+	</script>
+</html>
